@@ -381,3 +381,34 @@ $enddefinitions $end
 #0
 1!
 ";
+
+/// Issue reported by @neveltyc:
+/// https://github.com/ekiwi/wellen/issues/137
+#[test]
+fn dumpall_after_time_0_is_ok() {
+    let filename = "inputs/icarus/wellen-issue-137-icarus_dumpall.vcd";
+    let mut waves = read(filename).expect("failed to parse");
+    let cnt = waves.hierarchy().lookup_var(&["tb"], "cnt").unwrap();
+    let cnt_signal_ref = waves.hierarchy()[cnt].signal_ref();
+    waves.load_signals(&[cnt_signal_ref]);
+    let cnt_signal = waves.get_signal(cnt_signal_ref).unwrap();
+    let changes = cnt_signal
+        .iter_changes()
+        .map(|(time_idx, value)| format!("{}: {value}", waves.time_table()[time_idx as usize]))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        changes,
+        [
+            "0: 00000000",
+            "5: 00000001",
+            "15: 00000010",
+            "25: 00000011",
+            "35: 00000100",
+            "45: 00000101",
+            "55: 00000110",
+            "65: 00000111",
+            "75: 00001000",
+        ],
+        "cnt increments every 10 time units"
+    );
+}

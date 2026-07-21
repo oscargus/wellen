@@ -1180,12 +1180,8 @@ fn parse_first_token(token: &[u8]) -> Result<FirstTokenResult> {
         b'b' | b'B' | b'r' | b'R' | b's' | b'S' => Ok(FirstTokenResult::MultiBitValue),
         _ => {
             match token {
-                b"$dumpall" => {
-                    // interpret dumpall as indicating timestep zero
-                    Ok(FirstTokenResult::Time(0))
-                }
                 b"$comment" => Ok(FirstTokenResult::CommentStart),
-                b"$dumpvars" | b"$end" | b"$dumpoff" | b"$dumpon" => {
+                b"$dumpvars" | b"$end" | b"$dumpoff" | b"$dumpon" | b"$dumpall" => {
                     // ignore dumpvars, dumpoff, dumpon, and end command
                     Ok(FirstTokenResult::IgnoredCmd)
                 }
@@ -1465,7 +1461,7 @@ pub fn stream_body<
     match &mut data.input {
         Input::Reader(input) => {
             let start = input.stream_position().map_err(VcdParseError::from)?;
-            let stop_pos = determine_len(input).map_err(VcdParseError::from)? as usize;
+            let stop_pos = determine_len(input)? as usize;
             parse_body(input, &mut disp, stop_pos, None)?;
             // reset stream so that we can read data again
             input
